@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MRC Chatbot</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="./styles.css">
+  <link href="https://fonts.googleapis.com/earlyaccess/notosanskr.css" rel="stylesheet">
+</head>
+<body style='display:none'>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img id="profile-pic" src="./aws.jpg" width="50" height="50">
+      <span id="username">Amazon Web Services</span>
+    </div>
+
+    <div class="chatbox">
+      <!-- <div class="friend-bubble bubble reference">
+        How can I help you?
+      </div> -->
+    </div>
+
+    <div class="text-box">
+      <textarea placeholder="Write messages."></textarea>
+      <button id="send">Send</button>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+
+  <script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+  <script src="./script.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <!-- <script type="text/javascript" src="js/jquery.ajax-cross-origin.min.js"></script> -->
+
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.41.0.min.js"></script>
+</body>
+</html>

@@ -18,20 +18,18 @@ body {
   width: 100%;
   box-shadow: 0 2px 4px 0 rgba(0,0,0,0.50);
   transition: width 0.3s ease;
-  border-radius: 5px;
+  border-radius: 20px;
 }
 
 .chat-header {
   background-color: #f3a05d;
   position: relative;
   padding: 15px 8px 10px 13px;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  text-align: center;
-  height: 86px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
-/* .chat-header .header-btn {
+.chat-header .header-btn {
   border-radius: 50%;
   border: none;
   width: 12px;
@@ -40,55 +38,33 @@ body {
   position: absolute;
   top: 8px;
   padding: 0;
-} */
-
-.chat-margin {
-  height: 35px;
-  background-color: #f8f8f8;
-  box-shadow: inset 0 2px 2px 0 rgba(0,0,0,0.2);
 }
 
-#profile-pic {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 50%;
-  margin-left: -35px;
-  /* vertical-align: middle; */
+.chat-header #profile-pic {
+  vertical-align: middle;
   border-radius: 50%;
-  /* border-style: solid;
-  border-width: 0.05px;
-  border-color: lightgray ; */
   background-color: rgb(255, 255, 255);
-  width: 70px;
-  height: 70px;
-  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.2);
-  margin-top: 5px;
 }
 
 .chat-header #username {
   vertical-align: middle;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   margin-left: 5px;
-  margin-top: 5px;
   /* color: #343434; */
   color: white;
   font-weight: bold;
-  display: block;
 }
 
 /* chat box */
 
 .chatbox {
   height: 45vh;
-  /* background-color: #f5f5f5; */
-  background-color: #f8f8f8;
+  background-color: #d7e4f2;
+  background-color: white;
   padding: 10px;
-  /* padding-top: 35px; */
   overflow-y: scroll;
   position: relative;
-  /* box-shadow: inset 0 2px 2px 0 rgba(0,0,0,0.2); */
 }
 
 .bubble {
@@ -97,11 +73,10 @@ body {
   max-width: 300px;
   font-size: 14px;
   position: relative;
-  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.2);
 }
 
 .friend-bubble {
-  background-color: rgb(255, 255, 255);
+  background-color: rgb(186, 201, 243);
   border-radius: 10px 10px 10px 0;
   padding: 7px 15px 7px 15px;
   float: left;
@@ -109,23 +84,11 @@ body {
 }
 
 .my-bubble {
-  /* background-color: #f1ea9a; */
-  background-color: #f7e1b2;
+  background-color: #f1ea9a;
   border-radius: 10px 10px 0px 10px;
   padding: 7px 15px 7px 15px;
   float: right;
   clear: both;
-}
-
-/* buttons */
-
-.answer-button {
-  border-radius: 5px;
-  background-color: rgb(248, 244, 210);
-}
-
-.answer-button:hover {
-  cursor: pointer;
 }
 
 /* text box */
@@ -133,9 +96,8 @@ body {
 .text-box {
   background-color: #e9e9e9;
   padding: 10px;
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  box-shadow: inset 0 0 2px 0 rgba(0,0,0,0.2);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 .text-box textarea {
@@ -148,7 +110,6 @@ body {
   resize: none;
   padding: 10px;
   font-size: 14px;
-  box-shadow: inset 2px 2px 2px 0 rgba(0,0,0,0.2);
 }
 
 #send {
@@ -189,7 +150,7 @@ body {
   height: 10px;
   margin: 5px;
   border-radius: 100%;
-  background-color: #f3a05d;;
+  background-color: rgb(255, 255, 255);
 }
 
 .bubble-1, .bubble-2, .bubble-3 {
@@ -228,7 +189,7 @@ body {
 
 @media (min-width: 1000px) {
   .chat-container {
-    width: 35%;
+    width: 40%;
   }
 }
 

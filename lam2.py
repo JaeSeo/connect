@@ -1,5 +1,5 @@
 ## Thank You Email
-import json, os, boto3
+import json, time, os, boto3
 from datetime import datetime
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
@@ -14,6 +14,7 @@ ssm = boto3.client('ssm')
 
 # Local variables initialize
 dtable = os.environ['dtable']
+tranTable = os.environ['tranTable']
 profTab = dydb.Table(dtable)
 
 senderSSM = ssm.get_parameter(Name='LambdaPinPointSender', WithDecryption=True)
@@ -23,47 +24,88 @@ appidSSM = ssm.get_parameter(Name='LambdaPinPointAPPID', WithDecryption=True)
 APPID = appidSSM['Parameter']['Value']
 
 tab = dydb.Table(dtable)
-transTab = dydb.Table('mrcconnectTranscript')
+transTab = dydb.Table(tranTable)
 
-# Config
-voucherEmailSubject = "Here is your AWS Credit!"
-# voucherEmailBodyPlain = "Hello {$NAME}, Thank you for connecting with us through webchat! Here is your voucher code for USD 25.00, {$VOUCHER}, Regards, Sharan Lao AWS Marketing Response Center"
-voucherEmailBodyPlain = "Thank you for speaking to me! You’ll receive an email from me soon. Regards, AWS Marketing Response Center"
+# Email Contents for customers
+# subject
+voucherEmailSubject = "Thank you for contact MRC chatbot!"
+# body
 voucherEmailBodyHTML = """
 <html>
 <head></head>
 <body>
   <p>Hello <b>{$NAME}</b>,</p>
-  <p>Thank you for speaking to me! Below are the chatting history. Please contact me again if you have further questions.</p>
-  
-  {$transcript}
-  
+  <p>Thank you for speaking to me! Please contact me again if you have further questions.</p>
+  <br>
+  {$VOUCHER}
   
 Regards,<br>
-AWS Marketing Response Center<br>"""
+AWS Marketing Response Center<br>
+<br>
+<img src="./logo.png">
+"""
 
-# transcript query
-def getTranscript(event):
-    # sessionId = event['sessionId']
-    sessionId = "chatbot-demo1571487451252"
-    result = transTab.query(
-        IndexName = 'sessionId-conversationSeq-index',
-        KeyConditionExpression='sessionId = :sid',
-        ProjectionExpression='createOn, message, #ow',
-        ExpressionAttributeValues={
-            ':sid': sessionId
-        },
-        ExpressionAttributeNames={ "#ow": "owner" }
-    )
+# pinpoint function for customers
+def __sendVoucherEmail(email, name, vouchercode):
+    CHARSET = "UTF-8"
+    toAddr = email
+   # toAddr = 'yongkue@amazon.my'
+    status = 'TQFAIL'
     
-    obj={}
-    obj['chat'] = result['Items']
-    return obj
+    htmlBody = voucherEmailBodyHTML.replace('{$NAME}', name)
+    
+    if not vouchercode == '':
+        status = 'VOUCHERFAIL'
+        htmlBody = htmlBody.replace('{$VOUCHER}', "Here is your voucher code for USD 25.00, <b>" + vouchercode + "</b><br")
+        
+    else:
+        htmlBody = htmlBody.replace('{$VOUCHER}', "hi")
+    
+    try:
+        response = client.send_messages(
+            ApplicationId=APPID,
+            MessageRequest={
+                'Addresses': {
+                    toAddr: {
+                         'ChannelType': 'EMAIL'
+                    }
+                },
+                'MessageConfiguration': {
+                    'EmailMessage': {
+                        'FromAddress': sender,
+                        'SimpleEmail': {
+                            'Subject': {
+                                'Charset': CHARSET,
+                                'Data': voucherEmailSubject
+                            },
+                            'HtmlPart': {
+                                'Charset': CHARSET,
+                                'Data': htmlBody
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+    else:
+        emailResult = response['MessageResponse']['Result'][toAddr]
+        emailRespStatusCode = emailResult['StatusCode']
+        if emailRespStatusCode == 200:
+            status = 'VOUCHERSENT'
+            if vouchercode == '':
+              status = 'TQSENT'
+              
+            print("+++++ Message sent! Message ID: " + response['MessageResponse']['Result'][toAddr]['MessageId'] + ", status=" + status)
+    
+    return status
 
-# other functions
+# system date
 def sysdate():
     return datetime.now().strftime("%Y%m%d%H%M%S")
 
+# customer profile
 def getCustProf(mkey):
     localStatusCode = 200
     result = profTab.query(
@@ -87,68 +129,7 @@ def getCustProf(mkey):
         
     return [localStatusCode, message]
 
-def __sendVoucherEmail(email, name, chatTranscript, vouchercode=''):
-    CHARSET = "UTF-8"
-    toAddr = email
-   # toAddr = 'yongkue@amazon.my'
-    status = 'TQFAIL'
-    
-    nameChange = voucherEmailBodyHTML.replace('{$NAME}', name)
-    htmlBody = nameChange.replace('{$transcript}', chatTranscript)
-    textBody = voucherEmailBodyPlain.replace('{$NAME}', name)
-    
-    if not vouchercode == '':
-        status = 'VOUCHERFAIL'
-        htmlBody = htmlBody.replace('{$VOUCHER}', "Here is your voucher code for USD 25.00, <b>" + vouchercode + "</b>")
-        textBody = textBody.replace('{$VOUCHER}', "Here is your voucher code for USD 25.00, " + vouchercode)
-    else:
-        htmlBody = htmlBody.replace('{$VOUCHER}', "")
-        textBody = textBody.replace('{$VOUCHER}', "")
-    
-    try:
-        response = client.send_messages(
-            ApplicationId=APPID,
-            MessageRequest={
-                'Addresses': {
-                    toAddr: {
-                         'ChannelType': 'EMAIL'
-                    }
-                },
-                'MessageConfiguration': {
-                    'EmailMessage': {
-                        'FromAddress': sender,
-                        'SimpleEmail': {
-                            'Subject': {
-                                'Charset': CHARSET,
-                                'Data': voucherEmailSubject
-                            },
-                            'HtmlPart': {
-                                'Charset': CHARSET,
-                                'Data': htmlBody
-                            },
-                            'TextPart': {
-                                'Charset': CHARSET,
-                                'Data': textBody
-                            }
-                        }
-                    }
-                }
-            }
-        )
-    except ClientError as e:
-        print(e.response['Error']['Message'])
-    else:
-        emailResult = response['MessageResponse']['Result'][toAddr]
-        emailRespStatusCode = emailResult['StatusCode']
-        if emailRespStatusCode == 200:
-            status = 'VOUCHERSENT'
-            if vouchercode == '':
-              status = 'TQSENT'
-              
-            print("+++++ Message sent! Message ID: " + response['MessageResponse']['Result'][toAddr]['MessageId'] + ", status=" + status)
-    
-    return status
-
+#Lambda handler
 def run(event, context):
     print('++++++ EVENT ++++++')
     
@@ -173,25 +154,12 @@ def run(event, context):
         statusCode = 450
         message = 'Missing GetParams: sessionId'
     else:
-        
-        # Building transcript
-        rawTranscript = getTranscript(queryStr)
-        transcript = rawTranscript["chat"]
-        print(transcript)
-        
-        for line in transcript:
-            if line["owner"] == "BOT":
-                line["owner"] = "AWS"
-            else:
-                line["owner"] = "You"
-        
-        for line in transcript:
-            chatLine = "<p style='backbround-color:yellow;'> %s | %s </p>" % (line["owner"], line["message"])
-            chatHistory += chatLine
+        print(queryStr)
+        # lambda_client.invoke(FunctionName="mrcconnectRepNotice",
+        #             InvocationType='RequestResponse',
+        #             Payload=json.dumps(event)
+        #         )
 
-        # except Exception, e:
-        #     raise e))
-        
         # Getting customer profile
         mkey = queryStr
         statusCode, message = getCustProf(mkey)
@@ -213,16 +181,15 @@ def run(event, context):
             
             #Reset 208 => 200
             statusCode = 200
-        
-        # Trigger pinpoint
+
+        # Trigger pinpoint for customer
         if toSend == True:
             custInfo = message
             campaignid = mkey['cid']
             email = custInfo['email']
             name = custInfo['firstname'] + ' ' + custInfo['lastname']
-            chatTranscript = chatHistory
-                
-            mailStatus = __sendVoucherEmail(email, name, chatTranscript, voucherCode)
+            
+            mailStatus = __sendVoucherEmail(email, name, voucherCode)
             tab.update_item(
                 Key={
                     'email': email,
@@ -238,6 +205,7 @@ def run(event, context):
                 }
             )
     
+    #response for LEX
     res = {
       "dialogAction": {
         "type": "Close",

@@ -7,14 +7,14 @@ console.log(`sessionId: ${sessionId}`);
 let sequence = 100
 
 //dynamodb logging function
-function logMessage(msg, isBot = false){
+function logMessage(msg, owner){
   sequence = sequence + 1
   seq = sequence.toString()
   console.log(sequence);
   
-  let owner = 'CUST'
-  if (isBot)
-  owner = 'BOT'
+  // let owner = 'CUST'
+  // if (isBot)
+  // owner = 'BOT'
 
   saveTransEndPoint = "https://er8bhccz8g.execute-api.us-east-1.amazonaws.com/dev/"
   // postData = {"guid": guid, "campaignid": cid, "message": msg, "owner": owner}
@@ -91,7 +91,7 @@ $(document).ready(function() {
         userName = d.firstname + ' ' + d.lastname;
         let greetingMsg = `Hi ${userName}!`;
         $('.chatbox').append(`<div class="friend-bubble bubble">${greetingMsg}</li>`);
-        logMessage(greetingMsg, true)//logging for bot
+        logMessage(greetingMsg, 'BOT')//logging for bot
         // $('.chatbox').append(`<div class="friend-bubble bubble">Hi! How can I help you?</li>`);
       })
       .fail(function(data, status, error){
@@ -128,7 +128,7 @@ function keySend(event) {
 function send() {
       //user input
       const msg = $('textarea').val();
-      logMessage(msg, false) //dynamodb logging for user
+      logMessage(msg, 'CUST') //dynamodb logging for user
 
       if ($('textarea').val().trim() !== '') {
       $('.chatbox').append(`<div class="my-bubble bubble">${msg}</li>`);
@@ -148,7 +148,8 @@ function send() {
       var sessionAttributes = {
         "cid": cid,
         "guid": guid,
-        "sessionId": lexUserId
+        // "sessionId": lexUserId
+        "sessionId": sessionId
       };
 
       var params = {
@@ -156,7 +157,7 @@ function send() {
         botName: botName,
         // botName: "emailTest",
         inputText: msg,
-        userId: lexUserId,
+        userId: sessionId,
         sessionAttributes: sessionAttributes
       };
 
@@ -166,7 +167,7 @@ function send() {
           console.log('Error:  ' + err.message + ' (see console for details)');
         }
         if (data) {
-          logMessage(data.message, true) //dynamodb logging for bot
+          logMessage(data.message, 'BOT') //dynamodb logging for bot
           console.log(data);
 
           //remove preloader
@@ -177,17 +178,6 @@ function send() {
 
           // show response and/or error/dialog status
           $('.chatbox').append('<div class="friend-bubble bubble">' + data.message + '</li>');
-
-          //for end the coversation
-          // if (data.intentName == 'end') {
-          //   $.post("https://w2ukge0oed.execute-api.us-east-1.amazonaws.com/default/emailTest", JSON.stringify('jaehyes@amazon.com'))
-          //     .done(function(res){
-          //       console.log('email sent!');
-          //     })
-          //     .fail(function(res, status, error){
-          //       console.log(res.status + "::" + res.responseText)
-          //     })
-          // }
 
           //responseCard
           if (data.responseCard) {
@@ -209,20 +199,15 @@ function send() {
               </div>
             `);
             }
-            logMessage(data.responseCard.genericAttachments[0].title, true);//loggin bot's response card
-            logMessage(data.responseCard.genericAttachments[0].subTitle, true);//loggin bot's response card
-            // $('.chatbox').append(`
-            //   <div class="friend-bubble bubble" style="text-align: center;">
-            //     <div>${data.responseCard.genericAttachments[0].title}</div>
-            //     <div>${data.responseCard.genericAttachments[0].subTitle}</div>
-            //   </div>
-            // `);
+            logMessage(data.responseCard.genericAttachments[0].title, 'BOT');//loggin bot's response card
+            logMessage(data.responseCard.genericAttachments[0].subTitle, 'BOT');//loggin bot's response card
+
             const cardButton = data.responseCard.genericAttachments[0].buttons;
             for (i in cardButton) {
               $('.friend-bubble:last').append(`
                 <button class="answer-button" value="${cardButton[i].value}">${cardButton[i].text}</button >
               `);
-              logMessage(cardButton[i].text, true);
+              logMessage(cardButton[i].text, 'Option');
               console.log(i);
             }
           }
@@ -230,24 +215,13 @@ function send() {
         }
       });
       $('textarea').val('');
-      //lambda API (ajax)
-      // $.post("https://rmmq6sqmhk.execute-api.us-east-1.amazonaws.com/default/BiBot_API",
-      // JSON.stringify(
-      //   {
-      //     message: msg
-      //   }),
-      // function(data, status){
-      //   $('.chatbox').append('<div class="friend-bubble bubble">' + data.message + '</li>');
-      //   $(".chatbox").stop().animate({ scrollTop: $(".chatbox")[0].scrollHeight}, 1500);
-      // });
-
       $("textarea").focus();
     }
 }
 
 $(document).on('click', '.answer-button', function() {
   const msg = $(this).attr('value');
-  logMessage($(this).html(), false) //dynamodb logging for user
+  logMessage($(this).html(), 'CUST') //dynamodb logging for user
   console.log(msg);
 
   //preloading
@@ -260,11 +234,11 @@ $(document).on('click', '.answer-button', function() {
   `);  
 
   var lexruntime = new AWS.LexRuntime();
-  const lexUserId = localStorage.getItem("userInfo");
+  // const lexUserId = localStorage.getItem("userInfo");
   var sessionAttributes = {
     "cid": cid,
     "guid": guid,
-    "sessionId": lexUserId
+    "sessionId": sessionId
   };
 
   var params = {
@@ -272,7 +246,7 @@ $(document).on('click', '.answer-button', function() {
     botName: "MrcConversationBOT",
     // botName: "emailTest",
     inputText: msg,
-    userId: lexUserId,
+    userId: sessionId,
     sessionAttributes: sessionAttributes
   };
 
@@ -292,12 +266,10 @@ $(document).on('click', '.answer-button', function() {
       // show response and/or error/dialog status
       console.log(data);
       console.log(data.responseCard);
-        
-      logMessage(data.message, true); //dynamodb logging for bot
 
       //message
       if (data.message) {
-        logMessage(data.message, true); //dynamodb logging for bot
+        logMessage(data.message, 'BOT'); //dynamodb logging for bot
         $('.chatbox').append('<div class="friend-bubble bubble">' + data.message + '</li>');
       }
    
@@ -322,15 +294,15 @@ $(document).on('click', '.answer-button', function() {
             </div>
           `);
         }
-        logMessage(data.responseCard.genericAttachments[0].title, true); //dynamodb logging for bot
-        logMessage(data.responseCard.genericAttachments[0].subTitle, true); //dynamodb logging for bot    
+        logMessage(data.responseCard.genericAttachments[0].title, 'BOT'); //dynamodb logging for bot
+        logMessage(data.responseCard.genericAttachments[0].subTitle, 'BOT'); //dynamodb logging for bot    
 
         const cardButton = data.responseCard.genericAttachments[0].buttons;
         for (i in cardButton) {
           $('.friend-bubble:last').append(`
             <button class="answer-button" value=${cardButton[i].value}>${cardButton[i].text}</button >
           `);
-          logMessage(cardButton[i].text, true)
+          logMessage(cardButton[i].text, 'Option')
           console.log(i);
         }
       }
